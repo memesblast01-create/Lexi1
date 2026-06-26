@@ -143,7 +143,7 @@ export const SettingsView: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-emerald-400" />
-                <span>Firebase Authentication Terminal active</span>
+                <span>Firebase Authentication active</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-blue-400" />
