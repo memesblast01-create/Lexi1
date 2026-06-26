@@ -47,11 +47,6 @@ async function startServer() {
         - Do NOT hallucinate.
       `;
 
-      const genModel = ai.getGenerativeModel({ 
-        model: modelName,
-        systemInstruction: systemInstruction
-      });
-
       let userContent: any;
       if (typeof content === 'string') {
         userContent = { text: content };
@@ -64,16 +59,17 @@ async function startServer() {
         };
       }
 
-      const result = await genModel.generateContent({
+      const result = await ai.models.generateContent({
+        model: modelName,
         contents: [{ role: 'user', parts: [userContent] }],
-        generationConfig: {
+        config: {
+          systemInstruction: systemInstruction,
           responseMimeType: "application/json",
           responseSchema: schema
         }
       });
 
-      const response = result.response;
-      res.json(JSON.parse(response.text()));
+      res.json(JSON.parse(result.text));
     } catch (error: any) {
       console.error("Analysis error:", error);
       res.status(500).json({ error: error.message || "Failed to analyze document." });
