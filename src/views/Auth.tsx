@@ -81,7 +81,7 @@ export const AuthView: React.FC = () => {
         setNeedsVerification(true);
       }
     } catch (err: any) {
-      console.error("Crypto terminal auth failure:", err);
+      console.error("Auth failure:", err);
       let message = err.message;
       if (err.code === 'auth/user-not-found') message = "Authentication identity record not verified.";
       if (err.code === 'auth/wrong-password') message = "Invalid credentials. Secure sign-in denied.";
@@ -147,9 +147,6 @@ export const AuthView: React.FC = () => {
           <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-sm">L</div>
           <span className="font-extrabold text-slate-900 text-lg tracking-tight">LexiAnalyse <span className="text-brand-secondary">Pro</span></span>
         </div>
-        <div className="text-xs font-bold text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1">
-          <LockKeyhole className="w-3.5 h-3.5 text-emerald-500" />
-          Enterprise-Grade 256-Bit SSL
         </div>
       </div>
 
@@ -158,11 +155,11 @@ export const AuthView: React.FC = () => {
         <div className="lg:col-span-7 space-y-8">
           <div className="space-y-4">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-              Premium Forensic AI <br />
-              <span className="text-brand-secondary">Legal Risk Scanner</span>
+              AI Legal Document <br />
+              <span className="text-brand-secondary">Risk Scanner</span>
             </h1>
             <p className="text-slate-500 max-w-xl text-md leading-relaxed">
-              LexiAnalyse is a premium institutional terminal that automatically extracts liability, safety levels, and risk indicators from complex legal documents. Sign up to get started.
+              LexiAnalyse automatically extracts liability, safety levels, and risk indicators from complex legal documents. Sign up to get started.
             </p>
           </div>
 
@@ -173,14 +170,14 @@ export const AuthView: React.FC = () => {
                 <UploadCloud className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900 text-sm">Secure Terminal Preview</h3>
+                <h3 className="font-semibold text-slate-900 text-sm">Document Preview</h3>
                 <p className="text-slate-400 text-xs mt-1 max-w-sm">
-                  Sign in or establish a profile to start processing files.
+                  Sign in or create an account to start processing files.
                 </p>
               </div>
               <div className="inline-flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Sovereign Cloud Run nodes active
+                System status: online
               </div>
             </div>
             {/* Corner Decorative Lock Tag */}
@@ -224,7 +221,7 @@ export const AuthView: React.FC = () => {
               {isLogin ? 'Sign in to LexiAnalyse' : 'Create your account'}
             </h2>
             <p className="text-slate-400 text-xs mt-1.5">
-              {isLogin ? 'Enter your credentials to enter the secure terminal' : 'Create deep profile and start email verification'}
+              {isLogin ? 'Enter your credentials to continue' : 'Create your account to get started'}
             </p>
           </div>
 
