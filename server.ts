@@ -32,7 +32,7 @@ async function startServer() {
       }
 
       const { content, docType, language, schema } = req.body;
-      const modelName = "gemini-1.5-flash"; // Using a stable model name
+      const modelName = "gemini-2.5-flash-lite"; // gemini-1.5-flash is retired (404s on every call)
 
       const systemInstruction = `
         You are an advanced AI-powered document analysis engine "LexiAnalyse".
