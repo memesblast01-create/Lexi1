@@ -313,7 +313,7 @@ export const AuthView: React.FC = () => {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      <span>{isLogin ? 'Enter Secure Terminal' : 'Register Secure Profile'}</span>
+                      <span>{isLogin ? 'Log In' : 'Sign Up'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
