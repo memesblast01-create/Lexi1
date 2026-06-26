@@ -33,7 +33,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<AuthView />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><UploadView /></ProtectedRoute>} />
             <Route path="/analysis" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/results" element={<ProtectedRoute><AnalysisResultView /></ProtectedRoute>} />
