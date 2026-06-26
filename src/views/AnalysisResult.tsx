@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, Navigate, NavLink } from 'react-router-dom';
 import { 
   FileText, 
@@ -25,6 +25,18 @@ export const AnalysisResultView: React.FC = () => {
   const location = useLocation();
   const [isTranslating, setIsTranslating] = useState(false);
   const [viewLanguage, setViewLanguage] = useState('Default');
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const state = location.state as { analysis: AnalysisSummary; docName: string; docType: any; rawContent?: any; elapsedTime?: string } | null;
 
   if (!state) {
@@ -38,6 +50,7 @@ export const AnalysisResultView: React.FC = () => {
     if (!rawContent || lang === viewLanguage) return;
     
     setIsTranslating(true);
+    setIsLangOpen(false);
     try {
       const translated = await analyzeDocument(rawContent, docType, lang);
       setAnalysis(translated);
@@ -72,25 +85,30 @@ export const AnalysisResultView: React.FC = () => {
           <p className="text-slate-500 mt-1 md:mt-2 text-sm">Deep legal review for {docType}.</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <div className="relative group flex-1 md:flex-none">
+          <div className="relative flex-1 md:flex-none" ref={langMenuRef}>
             <button 
+              type="button"
               disabled={isTranslating}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium hover:bg-slate-50 transition-all text-sm group-hover:bg-slate-100"
+              onClick={() => setIsLangOpen(open => !open)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium hover:bg-slate-50 transition-all text-sm"
             >
-              {isTranslating ? <Loader2 className="w-4 h-4 animate-spin text-brand-secondary" /> : <Languages className="w-4 h-4 text-brand-secondary transition-transform group-hover:scale-110" />}
+              {isTranslating ? <Loader2 className="w-4 h-4 animate-spin text-brand-secondary" /> : <Languages className="w-4 h-4 text-brand-secondary" />}
               {viewLanguage === 'Default' ? 'Translate' : viewLanguage}
             </button>
-            <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block bg-white border border-slate-200 shadow-2xl rounded-xl p-2 z-50 grid grid-cols-2 gap-1 w-48 animate-in fade-in slide-in-from-bottom-2">
-              {languages.map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => handleTranslate(lang)}
-                  className="text-left px-3 py-1.5 text-xs hover:bg-brand-secondary/10 hover:text-brand-secondary rounded-lg font-medium transition-all"
-                >
-                  {lang}
-                </button>
-              ))}
-            </div>
+            {isLangOpen && (
+              <div className="absolute right-0 bottom-full mb-2 bg-white border border-slate-200 shadow-2xl rounded-xl p-2 z-50 grid grid-cols-2 gap-1 w-48">
+                {languages.map(lang => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => handleTranslate(lang)}
+                    className="text-left px-3 py-1.5 text-xs hover:bg-brand-secondary/10 hover:text-brand-secondary rounded-lg font-medium transition-all"
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button className="flex items-center justify-center gap-2 px-4 py-2 border border-brand-secondary text-brand-secondary rounded-lg font-medium hover:bg-brand-secondary hover:text-white transition-all text-sm">
             <Download className="w-4 h-4" />
