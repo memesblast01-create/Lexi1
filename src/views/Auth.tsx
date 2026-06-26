@@ -147,7 +147,6 @@ export const AuthView: React.FC = () => {
           <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-sm">L</div>
           <span className="font-extrabold text-slate-900 text-lg tracking-tight">LexiAnalyse <span className="text-brand-secondary">Pro</span></span>
         </div>
-        </div>
       </div>
 
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
