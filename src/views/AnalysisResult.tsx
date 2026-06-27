@@ -14,7 +14,8 @@ import {
   ShieldAlert,
   Info,
   Languages,
-  Loader2
+  Loader2,
+  Globe
 } from 'lucide-react';
 import { AnalysisSummary } from '../types';
 import { cn } from '../lib/utils';
@@ -179,6 +180,13 @@ export const AnalysisResultView: React.FC = () => {
     doc.text(`${analysis.verdict.confidence}% confidence`, margin + 172, y + 2);
     y += 36;
 
+    if (analysis.jurisdiction && analysis.jurisdiction.detectedCountry !== 'Unspecified') {
+      addHeading('Jurisdiction');
+      addBody(`Analyzed under ${analysis.jurisdiction.detectedCountry} law (${analysis.jurisdiction.confidence} confidence)`);
+      if (analysis.jurisdiction.evidence) addBody(analysis.jurisdiction.evidence);
+      if (analysis.jurisdiction.legalNote) addBody(analysis.jurisdiction.legalNote);
+    }
+
     addHeading('Summary');
     addBody(analysis.simpleSummary);
 
@@ -298,6 +306,27 @@ export const AnalysisResultView: React.FC = () => {
       <div className="grid grid-cols-12 gap-8">
         {/* Left Column */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
+          {/* Jurisdiction */}
+          {analysis.jurisdiction && analysis.jurisdiction.detectedCountry !== 'Unspecified' && (
+            <section className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex items-start gap-3">
+              <Globe className="text-brand-secondary w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-slate-900">
+                  Analyzed under {analysis.jurisdiction.detectedCountry} law
+                  <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                    {analysis.jurisdiction.confidence} confidence
+                  </span>
+                </p>
+                {analysis.jurisdiction.evidence && (
+                  <p className="text-xs text-slate-500 mt-1">{analysis.jurisdiction.evidence}</p>
+                )}
+                {analysis.jurisdiction.legalNote && (
+                  <p className="text-xs text-slate-600 mt-2 italic">{analysis.jurisdiction.legalNote}</p>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* Summary */}
           <section className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
