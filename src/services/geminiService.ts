@@ -108,3 +108,26 @@ export async function analyzeDocument(
 
   return response.json();
 }
+
+export async function translateAnalysis(
+  existingAnalysis: AnalysisSummary,
+  language: string
+): Promise<AnalysisSummary> {
+  const response = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: 'translate',
+      existingAnalysis,
+      language,
+      schema: ANALYSIS_SCHEMA
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to translate report.');
+  }
+
+  return response.json();
+}
