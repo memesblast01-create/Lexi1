@@ -24,7 +24,7 @@ import {
   sendEmailVerification,
   updateProfile,
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, resetPassword } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
@@ -39,7 +39,30 @@ export const AuthView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const navigate = useNavigate();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Enter your email address first, then click reset.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      await resetPassword(email);
+      setSuccessMessage("Password reset link sent. Check your inbox (and spam folder).");
+    } catch (err: any) {
+      let message = "Could not send reset email. Please check the address and try again.";
+      if (err.code === 'auth/user-not-found') message = "No account found with that email address.";
+      if (err.code === 'auth/invalid-email') message = "That email address looks invalid.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,14 +240,53 @@ export const AuthView: React.FC = () => {
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/40 p-8 md:p-10 relative">
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              {isLogin ? 'Sign in to LexiAnalyse' : 'Create your account'}
+              {isForgotPassword ? 'Reset your password' : isLogin ? 'Sign in to LexiAnalyse' : 'Create your account'}
             </h2>
             <p className="text-slate-400 text-xs mt-1.5">
-              {isLogin ? 'Enter your credentials to continue' : 'Create your account to get started'}
+              {isForgotPassword ? 'Enter your email and we will send a reset link' : isLogin ? 'Enter your credentials to continue' : 'Create your account to get started'}
             </p>
           </div>
 
-          {needsVerification ? (
+          {isForgotPassword ? (
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                <div className="relative group">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-brand-secondary transition-all text-sm text-slate-900 placeholder:text-slate-400"
+                    placeholder="e.g. counsel@institution.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-xs font-medium">{error}</div>
+              )}
+              {successMessage && (
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-medium">{successMessage}</div>
+              )}
+
+              <button 
+                disabled={loading}
+                className="w-full bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Send reset link</span>}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setIsForgotPassword(false); setError(null); setSuccessMessage(null); }}
+                className="w-full text-center text-xs text-slate-500 hover:text-brand-secondary font-medium"
+              >
+                Back to sign in
+              </button>
+            </form>
+          ) : needsVerification ? (
             <div className="text-center space-y-6">
               <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
                 <Mail className="w-7 h-7 text-brand-secondary" />
@@ -270,7 +332,18 @@ export const AuthView: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                    {isLogin && (
+                      <button
+                        type="button"
+                        onClick={() => { setIsForgotPassword(true); setError(null); setSuccessMessage(null); }}
+                        className="text-xs font-medium text-brand-secondary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative group">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
                     <input 
