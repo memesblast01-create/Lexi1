@@ -41,10 +41,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Analyze the provided document which is a ${docType}.
         Respond in ${language}.
         Follow these rules:
+        - First, determine the legal jurisdiction (country) this document is governed by. Look for signals
+          such as an explicit "governing law" clause, named courts, currency, addresses, company registration
+          references, or jurisdiction-specific legal terminology. If you find a clear signal, name the country
+          and explain the evidence. If there is no reliable signal, set detectedCountry to "Unspecified" and
+          leave evidence/legalNote empty.
+        - If a jurisdiction is detected, tailor your risk analysis, "checkCarefully" items, and legal reasoning
+          to that specific country's relevant laws (e.g. labor law caps and entitlements, consumer protection
+          rules, contract enforceability standards, mandatory disclosure requirements). Mention in legalNote
+          briefly how the analysis was adjusted (e.g. "Adjusted for UAE Labour Law end-of-service gratuity rules").
+        - If no jurisdiction is detected, analyze using general/common legal principles and say so plainly —
+          do not guess a country without evidence.
         - Simplify complex documents into plain language.
-        - Highlight risks (unfair terms, hidden conditions, penalties).
+        - Highlight risks (unfair terms, hidden conditions, penalties), with jurisdiction-specific context where relevant.
         - Provide structured output.
-        - Disclaimer: Include that this is an AI-generated explanation and not a substitute for professional legal advice.
+        - Disclaimer: Include that this is an AI-generated explanation and not a substitute for professional legal advice,
+          and that local laws may have changed or have nuances a licensed local lawyer should confirm.
         - Be accurate and cautious.
         - Do NOT hallucinate.
       `;
