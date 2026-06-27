@@ -16,11 +16,12 @@ import {
   Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { updateProfile, updateEmail } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { updateProfile, updateEmail, deleteUser } from 'firebase/auth';
+import { auth, db, logout, resetPassword } from '../lib/firebase';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 
 export const SettingsView: React.FC = () => {
   const { user, userProfile } = useAuth();
@@ -28,6 +29,50 @@ export const SettingsView: React.FC = () => {
   const [emailInput, setEmailInput] = useState(user?.email || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    setIsSendingReset(true);
+    setResetMsg('');
+    try {
+      await resetPassword(user.email);
+      setResetMsg('Reset link sent to your email.');
+    } catch (err) {
+      setResetMsg('Could not send reset email. Try again later.');
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!auth.currentUser) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteDoc(doc(db, 'users', auth.currentUser.uid));
+      await deleteUser(auth.currentUser);
+      navigate('/login');
+    } catch (err: any) {
+      if (err.code === 'auth/requires-recent-login') {
+        setDeleteError('For security, please log out and log back in, then try deleting your account again.');
+      } else {
+        setDeleteError('Could not delete account. Please try again.');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const [errorMsg, setErrorMsg] = useState('');
   
   // Local state for plan selection simulation to let users test security limits
@@ -304,6 +349,74 @@ export const SettingsView: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Account Actions */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 mt-8">
+            <h3 className="font-bold text-slate-900 mb-1">Account Actions</h3>
+            <p className="text-slate-400 text-xs mb-5">Manage your sign-in and account.</p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={handleSendPasswordReset}
+                disabled={isSendingReset}
+                className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-left disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  Change password
+                </span>
+                <span className="text-xs text-slate-400">{isSendingReset ? 'Sending...' : 'Send reset email'}</span>
+              </button>
+              {resetMsg && <p className="text-xs text-emerald-600 px-1">{resetMsg}</p>}
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-left"
+              >
+                <span className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                  <Key className="w-4 h-4 text-slate-400" />
+                  Log out
+                </span>
+              </button>
+
+              {!showDeleteConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all text-left"
+                >
+                  <span className="flex items-center gap-3 text-sm font-medium text-red-600">
+                    <Trash2 className="w-4 h-4" />
+                    Delete account
+                  </span>
+                </button>
+              ) : (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                  <p className="text-sm font-medium text-red-700">This permanently deletes your account and all your analyses. This cannot be undone.</p>
+                  {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all disabled:opacity-60"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Yes, delete my account'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
