@@ -4,6 +4,16 @@ const ANALYSIS_SCHEMA = {
   type: "object",
   properties: {
     simpleSummary: { type: "string", description: "A simple summary of the document in plain language." },
+    jurisdiction: {
+      type: "object",
+      properties: {
+        detectedCountry: { type: "string", description: "The country/legal jurisdiction this document appears to be governed by, based on signals like addresses, currency, legal terminology, named courts, or an explicit governing-law clause. Use 'Unspecified' if no reliable signal exists." },
+        confidence: { type: "string", enum: ["High", "Medium", "Low", "Unknown"] },
+        evidence: { type: "string", description: "Brief explanation of what in the document indicated this jurisdiction (e.g. 'Governing law clause names UAE federal law', or 'Currency in AED and reference to Dubai courts'). Empty string if jurisdiction is Unspecified." },
+        legalNote: { type: "string", description: "A short note on how the risk analysis below was adjusted for this jurisdiction's local laws (e.g. labor law caps, mandatory clauses, consumer protections specific to that country). Empty string if jurisdiction is Unspecified." }
+      },
+      required: ["detectedCountry", "confidence", "evidence", "legalNote"]
+    },
     keyInformation: {
       type: "object",
       properties: {
@@ -75,6 +85,7 @@ const ANALYSIS_SCHEMA = {
   },
   required: [
     "simpleSummary", 
+    "jurisdiction",
     "keyInformation", 
     "clauses", 
     "risks", 
