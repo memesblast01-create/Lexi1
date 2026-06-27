@@ -100,11 +100,11 @@ export const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         </div>
 
         <div className="space-y-1">
-          <a href="#" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
+          <a href="mailto:support@arsalanportfolio.live?subject=LexiAnalyse%20Help%20Request" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
             <HelpCircle className="w-4 h-4 mr-3" />
             <span className="text-xs">Help Center</span>
           </a>
-          <a href="#" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
+          <a href="mailto:support@arsalanportfolio.live?subject=LexiAnalyse%20Support%20Request" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
             <Headset className="w-4 h-4 mr-3" />
             <span className="text-xs">Contact Support</span>
           </a>
