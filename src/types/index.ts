@@ -2,6 +2,12 @@ export type DocumentType = 'Contract' | 'Legal Document' | 'Business Agreement' 
 
 export interface AnalysisSummary {
   simpleSummary: string;
+  jurisdiction: {
+    detectedCountry: string;
+    confidence: 'High' | 'Medium' | 'Low' | 'Unknown';
+    evidence: string;
+    legalNote: string;
+  };
   keyInformation: {
     parties: string;
     dates: string;
