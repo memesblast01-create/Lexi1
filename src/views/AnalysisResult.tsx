@@ -20,10 +20,12 @@ import { AnalysisSummary } from '../types';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { analyzeDocument } from '../services/geminiService';
+import jsPDF from 'jspdf';
 
 export const AnalysisResultView: React.FC = () => {
   const location = useLocation();
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
   const [viewLanguage, setViewLanguage] = useState('Default');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
@@ -51,55 +53,146 @@ export const AnalysisResultView: React.FC = () => {
     
     setIsTranslating(true);
     setIsLangOpen(false);
+    setTranslateError(null);
     try {
       const translated = await analyzeDocument(rawContent, docType, lang);
       setAnalysis(translated);
       setViewLanguage(lang);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Translation failed", err);
+      setTranslateError(err.message || "Translation failed. The AI service may be busy — please try again in a moment.");
     } finally {
       setIsTranslating(false);
     }
   };
 
   const handleDownload = () => {
-    const lines: string[] = [];
-    lines.push(`LexiAnalyse Report: ${docName}`);
-    lines.push(`Generated: ${new Date().toLocaleString()}`);
-    lines.push(`Risk Verdict: ${analysis.verdict.score} (${analysis.verdict.confidence}% confidence)`);
-    lines.push('');
-    lines.push('SUMMARY');
-    lines.push(analysis.simpleSummary);
-    lines.push('');
-    lines.push('KEY INFORMATION');
-    lines.push(`Parties: ${analysis.keyInformation.parties}`);
-    lines.push(`Dates: ${analysis.keyInformation.dates}`);
-    lines.push(`Payment Terms: ${analysis.keyInformation.paymentTerms}`);
-    lines.push(`Responsibilities: ${analysis.keyInformation.responsibilities}`);
-    lines.push('');
-    lines.push('RISKS');
-    analysis.risks.forEach(r => lines.push(`- ${r.title}: ${r.description}`));
-    lines.push('');
-    lines.push('THINGS TO CHECK CAREFULLY');
-    analysis.checkCarefully.forEach(c => lines.push(`- ${c.title}: ${c.description}`));
-    lines.push('');
-    lines.push('BENEFITS');
-    analysis.benefits.forEach(b => lines.push(`- ${b.title}: ${b.description}`));
-    lines.push('');
-    lines.push('QUESTIONS TO ASK');
-    analysis.questions.forEach(q => lines.push(`- ${q}`));
-    lines.push('');
-    lines.push('This is an AI-generated explanation, not a substitute for professional legal advice.');
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 48;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 56;
 
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${docName.replace(/\.[^/.]+$/, '')}-LexiAnalyse-Report.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const verdictColors: Record<string, [number, number, number]> = {
+      'Safe': [16, 150, 90],
+      'Moderate Risk': [217, 119, 6],
+      'High Risk': [220, 38, 38],
+    };
+    const vColor = verdictColors[analysis.verdict.score] || [71, 85, 105];
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed > 780) {
+        doc.addPage();
+        y = 56;
+      }
+    };
+
+    const addHeading = (text: string) => {
+      ensureSpace(30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
+      doc.text(text, margin, y);
+      y += 8;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 18;
+    };
+
+    const addBody = (text: string) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(51, 65, 85);
+      const wrapped = doc.splitTextToSize(text, maxWidth);
+      ensureSpace(wrapped.length * 14 + 6);
+      doc.text(wrapped, margin, y);
+      y += wrapped.length * 14 + 10;
+    };
+
+    const addBulletList = (items: { title: string; description: string }[]) => {
+      items.forEach(item => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(15, 23, 42);
+        const titleWrapped = doc.splitTextToSize(`• ${item.title}`, maxWidth);
+        ensureSpace(titleWrapped.length * 14 + 4);
+        doc.text(titleWrapped, margin, y);
+        y += titleWrapped.length * 14 + 2;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const descWrapped = doc.splitTextToSize(item.description, maxWidth - 14);
+        ensureSpace(descWrapped.length * 13 + 8);
+        doc.text(descWrapped, margin + 14, y);
+        y += descWrapped.length * 13 + 10;
+      });
+    };
+
+    // Cover header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text('LexiAnalyse Report', margin, y);
+    y += 22;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${docName}  •  Generated ${new Date().toLocaleString()}`, margin, y);
+    y += 28;
+
+    // Verdict badge
+    doc.setFillColor(vColor[0], vColor[1], vColor[2]);
+    doc.roundedRect(margin, y - 14, 160, 24, 6, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text(analysis.verdict.score, margin + 12, y + 2);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${analysis.verdict.confidence}% confidence`, margin + 172, y + 2);
+    y += 36;
+
+    addHeading('Summary');
+    addBody(analysis.simpleSummary);
+
+    addHeading('Key Information');
+    addBody(`Parties: ${analysis.keyInformation.parties}`);
+    addBody(`Dates: ${analysis.keyInformation.dates}`);
+    addBody(`Payment Terms: ${analysis.keyInformation.paymentTerms}`);
+    addBody(`Responsibilities: ${analysis.keyInformation.responsibilities}`);
+
+    if (analysis.risks.length) {
+      addHeading('Risks');
+      addBulletList(analysis.risks);
+    }
+
+    if (analysis.checkCarefully.length) {
+      addHeading('Things To Check Carefully');
+      addBulletList(analysis.checkCarefully);
+    }
+
+    if (analysis.benefits.length) {
+      addHeading('Benefits');
+      addBulletList(analysis.benefits);
+    }
+
+    if (analysis.questions.length) {
+      addHeading('Questions To Ask');
+      analysis.questions.forEach(q => addBody(`• ${q}`));
+    }
+
+    ensureSpace(40);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(
+      doc.splitTextToSize('This is an AI-generated explanation and is not a substitute for professional legal advice.', maxWidth),
+      margin, y
+    );
+
+    doc.save(`${docName.replace(/\.[^/.]+$/, '')}-LexiAnalyse-Report.pdf`);
   };
 
   const languages = ['English', 'Arabic', 'French', 'Spanish', 'German', 'Chinese', 'Hindi', 'Russian', 'Portuguese', 'Japanese', 'Korean', 'Urdu'];
@@ -162,6 +255,13 @@ export const AnalysisResultView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {translateError && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+          <span>{translateError}</span>
+          <button type="button" onClick={() => setTranslateError(null)} className="text-red-400 hover:text-red-600 font-bold text-xs">Dismiss</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-8">
         {/* Left Column */}
