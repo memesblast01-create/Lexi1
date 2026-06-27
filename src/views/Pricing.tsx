@@ -52,8 +52,7 @@ export const PricingView: React.FC = () => {
         'Total of 2 documents allowed',
         'Maximum 5 pages per document',
         'Standard AI Legal Model',
-        'Basic Risk & Compliance Scoring',
-        'Secure Cloud Run parsing (London)'
+        'Basic Risk & Compliance Scoring'
       ],
       buttonText: 'Current Plan',
       isCurrent: activePlan === 'free',
