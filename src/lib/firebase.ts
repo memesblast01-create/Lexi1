@@ -3,7 +3,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signOut
+  signOut,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -25,6 +26,10 @@ export async function signInWithGoogle() {
 
 export async function logout() {
   await signOut(auth);
+}
+
+export async function resetPassword(email: string) {
+  await sendPasswordResetEmail(auth, email);
 }
 
 // Validation connection
