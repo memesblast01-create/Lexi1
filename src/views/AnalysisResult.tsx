@@ -62,6 +62,46 @@ export const AnalysisResultView: React.FC = () => {
     }
   };
 
+  const handleDownload = () => {
+    const lines: string[] = [];
+    lines.push(`LexiAnalyse Report: ${docName}`);
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push(`Risk Verdict: ${analysis.verdict.score} (${analysis.verdict.confidence}% confidence)`);
+    lines.push('');
+    lines.push('SUMMARY');
+    lines.push(analysis.simpleSummary);
+    lines.push('');
+    lines.push('KEY INFORMATION');
+    lines.push(`Parties: ${analysis.keyInformation.parties}`);
+    lines.push(`Dates: ${analysis.keyInformation.dates}`);
+    lines.push(`Payment Terms: ${analysis.keyInformation.paymentTerms}`);
+    lines.push(`Responsibilities: ${analysis.keyInformation.responsibilities}`);
+    lines.push('');
+    lines.push('RISKS');
+    analysis.risks.forEach(r => lines.push(`- ${r.title}: ${r.description}`));
+    lines.push('');
+    lines.push('THINGS TO CHECK CAREFULLY');
+    analysis.checkCarefully.forEach(c => lines.push(`- ${c.title}: ${c.description}`));
+    lines.push('');
+    lines.push('BENEFITS');
+    analysis.benefits.forEach(b => lines.push(`- ${b.title}: ${b.description}`));
+    lines.push('');
+    lines.push('QUESTIONS TO ASK');
+    analysis.questions.forEach(q => lines.push(`- ${q}`));
+    lines.push('');
+    lines.push('This is an AI-generated explanation, not a substitute for professional legal advice.');
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${docName.replace(/\.[^/.]+$/, '')}-LexiAnalyse-Report.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const languages = ['English', 'Arabic', 'French', 'Spanish', 'German', 'Chinese', 'Hindi', 'Russian', 'Portuguese', 'Japanese', 'Korean', 'Urdu'];
 
   return (
@@ -110,7 +150,11 @@ export const AnalysisResultView: React.FC = () => {
               </div>
             )}
           </div>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 border border-brand-secondary text-brand-secondary rounded-lg font-medium hover:bg-brand-secondary hover:text-white transition-all text-sm">
+          <button
+            type="button"
+            onClick={() => handleDownload()}
+            className="flex items-center justify-center gap-2 px-4 py-2 border border-brand-secondary text-brand-secondary rounded-lg font-medium hover:bg-brand-secondary hover:text-white transition-all text-sm"
+          >
             <Download className="w-4 h-4" />
           </button>
           <button className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg font-medium hover:opacity-90 transition-all text-sm">
