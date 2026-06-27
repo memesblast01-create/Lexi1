@@ -171,7 +171,7 @@ export const AuthView: React.FC = () => {
       {/* Visual Brand Header */}
       <div className="w-full flex justify-between items-center mb-10 max-w-6xl">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-sm">L</div>
+          <img src="/logo-icon.svg" alt="LexiAnalyse" className="w-8 h-8 rounded-lg" />
           <span className="font-extrabold text-slate-900 text-lg tracking-tight">LexiAnalyse <span className="text-brand-secondary">Pro</span></span>
         </div>
       </div>
