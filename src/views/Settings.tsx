@@ -178,24 +178,6 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-6 relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-xl" />
-            <h4 className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-4">Enterprise Guard</h4>
-            <div className="space-y-3 relative z-10 text-xs">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>End-to-End File Encryption active</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-emerald-400" />
-                <span>Firebase Authentication active</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span>Server Region: Secure Cloud Run London</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Action Panels */}
