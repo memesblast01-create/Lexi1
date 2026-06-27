@@ -19,13 +19,14 @@ import {
 import { AnalysisSummary } from '../types';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
-import { analyzeDocument } from '../services/geminiService';
+import { translateAnalysis } from '../services/geminiService';
 import jsPDF from 'jspdf';
 
 export const AnalysisResultView: React.FC = () => {
   const location = useLocation();
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateError, setTranslateError] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const [viewLanguage, setViewLanguage] = useState('Default');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
@@ -49,13 +50,13 @@ export const AnalysisResultView: React.FC = () => {
   const [analysis, setAnalysis] = useState(initialAnalysis);
 
   const handleTranslate = async (lang: string) => {
-    if (!rawContent || lang === viewLanguage) return;
+    if (lang === viewLanguage) return;
     
     setIsTranslating(true);
     setIsLangOpen(false);
     setTranslateError(null);
     try {
-      const translated = await analyzeDocument(rawContent, docType, lang);
+      const translated = await translateAnalysis(analysis, lang);
       setAnalysis(translated);
       setViewLanguage(lang);
     } catch (err: any) {
@@ -63,6 +64,30 @@ export const AnalysisResultView: React.FC = () => {
       setTranslateError(err.message || "Translation failed. The AI service may be busy — please try again in a moment.");
     } finally {
       setIsTranslating(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `LexiAnalyse: ${docName}`,
+      text: `Risk analysis for "${docName}": ${analysis.verdict.score} (${analysis.verdict.confidence}% confidence). ${analysis.simpleSummary.slice(0, 150)}...`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // user cancelled the share sheet, do nothing
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareData.text}\n\n${shareData.url}`);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch (err) {
+        console.error("Could not copy share link", err);
+      }
     }
   };
 
@@ -250,8 +275,15 @@ export const AnalysisResultView: React.FC = () => {
           >
             <Download className="w-4 h-4" />
           </button>
-          <button className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg font-medium hover:opacity-90 transition-all text-sm">
+          <button
+            type="button"
+            onClick={() => handleShare()}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg font-medium hover:opacity-90 transition-all text-sm relative"
+          >
             <Share2 className="w-4 h-4" />
+            {shareCopied && (
+              <span className="absolute -top-9 right-0 bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap">Link copied!</span>
+            )}
           </button>
         </div>
       </div>
