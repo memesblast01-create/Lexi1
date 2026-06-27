@@ -48,9 +48,12 @@ export const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   return (
     <aside className="h-full w-[260px] border-r border-white/10 bg-[#1A2B3C] shadow-xl flex flex-col py-8 z-50">
       <div className="px-6 mb-10 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">LexiAnalyse</h1>
-          <p className="text-[10px] text-on-primary-container uppercase tracking-widest font-semibold mt-1">Enterprise Analysis</p>
+        <div className="flex items-center gap-3">
+          <img src="/logo-icon.svg" alt="LexiAnalyse" className="w-9 h-9 rounded-lg" />
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">LexiAnalyse</h1>
+            <p className="text-[10px] text-on-primary-container uppercase tracking-widest font-semibold mt-1">Enterprise Analysis</p>
+          </div>
         </div>
         {onClose && (
           <button 
