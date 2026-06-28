@@ -14,11 +14,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Compliance Core Operational', body: 'LexiAnalyse document scanning engine is fully primed.', time: 'Just now', read: false },
-    { id: 2, title: 'Profile Synchronized', body: 'Your user profile and settings have been safely updated.', time: '2 hours ago', read: false },
-    { id: 3, title: 'Audit Standard Updated', body: 'Deep compliance checklists synced to latest specifications.', time: '1 day ago', read: true }
-  ]);
+  const [notifications, setNotifications] = useState<{ id: number; title: string; body: string; time: string; read: boolean }[]>([]);
 
   return (
     <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-260px)] h-16 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 md:px-8">
