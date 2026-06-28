@@ -70,6 +70,10 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const pendingTasks = recentAnalyses.filter(
+    (doc) => doc.result?.verdict?.score === 'High Risk' || doc.result?.verdict?.score === 'Moderate Risk'
+  );
+
   if (authLoading) return null;
 
   return (
@@ -103,9 +107,6 @@ export const Dashboard: React.FC = () => {
                 <Plus className="w-5 h-5 mr-2" />
                 Browse Files
               </NavLink>
-              <button className="px-8 py-3 bg-white border border-brand-secondary text-brand-secondary font-bold rounded-lg hover:bg-surface-low transition-all">
-                Import from Cloud
-              </button>
             </div>
           </motion.div>
         </div>
@@ -125,29 +126,38 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-on-surface mb-4">Pending Tasks</h3>
-            <div className="space-y-4">
-              <div className="flex items-center group cursor-pointer">
-                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 mr-4">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold">Review Discrepancy</p>
-                  <p className="text-[10px] text-slate-500">Master Service Agreement #442</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-brand-primary transition-colors" />
+            <h3 className="text-lg font-bold text-on-surface mb-4">Needs Your Attention</h3>
+            {pendingTasks.length === 0 ? (
+              <div className="flex flex-col items-center text-center py-6">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-2" />
+                <p className="text-sm font-medium text-slate-500">Nothing needs review right now.</p>
               </div>
-              <div className="flex items-center group cursor-pointer">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mr-4">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold">Sign-off Ready</p>
-                  <p className="text-[10px] text-slate-500">Q3 Financial Audit Summary</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-brand-primary transition-colors" />
+            ) : (
+              <div className="space-y-4">
+                {pendingTasks.map((doc) => {
+                  const isHighRisk = doc.result.verdict.score === 'High Risk';
+                  return (
+                    <div
+                      key={doc.id}
+                      onClick={() => navigate('/results', { state: { analysis: doc.result, docName: doc.docName, docType: doc.docType } })}
+                      className="flex items-center group cursor-pointer"
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center mr-4",
+                        isHighRisk ? "bg-red-50 text-error" : "bg-amber-50 text-amber-600"
+                      )}>
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate">{isHighRisk ? 'High Risk — Review' : 'Moderate Risk — Worth a look'}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{doc.docName}</p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-brand-primary transition-colors flex-shrink-0" />
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
