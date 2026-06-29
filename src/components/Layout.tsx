@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { Menu, X } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { ChatWidget } from './ChatWidget';
 
 export const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -49,6 +50,8 @@ export const Layout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      <ChatWidget />
     </div>
   );
 };
