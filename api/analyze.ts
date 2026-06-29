@@ -6,6 +6,42 @@ if (process.env.GEMINI_API_KEY) {
   ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 }
 
+const PRIMARY_MODEL = "gemini-2.5-flash-lite";
+const FALLBACK_MODEL = "gemini-2.5-flash";
+
+function isOverloadedError(err: any): boolean {
+  const msg = err?.message || "";
+  return err?.status === 503 || msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("overloaded");
+}
+
+async function generateWithRetry(params: { contents: any; systemInstruction: string; schema: any }) {
+  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const result = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: {
+          systemInstruction: params.systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: params.schema,
+        },
+      });
+      return result;
+    } catch (err: any) {
+      lastError = err;
+      if (!isOverloadedError(err)) {
+        throw err; // not a capacity issue, no point trying the other model
+      }
+      // otherwise try the next model in the list
+    }
+  }
+
+  throw lastError;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -19,7 +55,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { content, docType, language, schema, mode, existingAnalysis } = req.body;
-    const modelName = "gemini-2.5-flash-lite"; // gemini-1.5-flash is retired (404s on every call)
 
     let contents;
     let systemInstruction;
@@ -75,19 +110,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contents = [{ role: "user", parts: [userContent] }];
     }
 
-    const result = await ai.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: schema,
-      },
-    });
+    const result = await generateWithRetry({ contents, systemInstruction, schema });
 
     res.status(200).json(JSON.parse(result.text));
   } catch (error: any) {
     console.error("Analysis error:", error);
-    res.status(500).json({ error: error.message || "Failed to analyze document." });
+    const friendlyMessage = isOverloadedError(error)
+      ? "The AI service is experiencing high demand right now. Please try again in a minute."
+      : error.message || "Failed to analyze document.";
+    res.status(500).json({ error: friendlyMessage });
   }
 }
