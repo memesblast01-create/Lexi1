@@ -4,6 +4,9 @@
   "functions": {
     "api/analyze.ts": {
       "maxDuration": 10
+    },
+    "api/chat.ts": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
