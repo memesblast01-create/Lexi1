@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../contexts/ChatContext';
 
 export const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+  const { open: openChat } = useChat();
   const { userProfile } = useAuth();
   const activePlan = userProfile?.plan || 'free';
   const usageCount = userProfile?.usageCount || 0;
@@ -103,14 +105,14 @@ export const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         </div>
 
         <div className="space-y-1">
-          <a href="mailto:support@arsalanportfolio.live?subject=LexiAnalyse%20Help%20Request" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
+          <a href="mailto:lexianalyse.team@gmail.com?subject=LexiAnalyse%20Support%20Request" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
             <HelpCircle className="w-4 h-4 mr-3" />
-            <span className="text-xs">Help Center</span>
+            <span className="text-xs">Email Us</span>
           </a>
-          <a href="mailto:support@arsalanportfolio.live?subject=LexiAnalyse%20Support%20Request" className="flex items-center py-2 text-slate-400 hover:text-white transition-colors">
+          <button type="button" onClick={openChat} className="w-full flex items-center py-2 text-slate-400 hover:text-white transition-colors text-left">
             <Headset className="w-4 h-4 mr-3" />
-            <span className="text-xs">Contact Support</span>
-          </a>
+            <span className="text-xs">Live Chat</span>
+          </button>
         </div>
       </div>
     </aside>
