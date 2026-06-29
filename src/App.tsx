@@ -11,6 +11,7 @@ import { AnalysisResultView } from './views/AnalysisResult';
 import { PricingView } from './views/Pricing';
 import { SettingsView } from './views/Settings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
 import { AuthView } from './views/Auth';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -29,20 +30,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<AuthView />} />
-          <Route element={<Layout />}>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><UploadView /></ProtectedRoute>} />
-            <Route path="/analysis" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/results" element={<ProtectedRoute><AnalysisResultView /></ProtectedRoute>} />
-            <Route path="/pricing" element={<PricingView />} />
-            <Route path="/limits" element={<PricingView />} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsView /></ProtectedRoute>} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ChatProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<AuthView />} />
+            <Route element={<Layout />}>
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/documents" element={<ProtectedRoute><UploadView /></ProtectedRoute>} />
+              <Route path="/analysis" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/results" element={<ProtectedRoute><AnalysisResultView /></ProtectedRoute>} />
+              <Route path="/pricing" element={<PricingView />} />
+              <Route path="/limits" element={<PricingView />} />
+              <Route path="/settings" element={<ProtectedRoute><SettingsView /></ProtectedRoute>} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ChatProvider>
     </AuthProvider>
   );
 }
