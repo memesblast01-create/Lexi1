@@ -1,26 +1,57 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { GoogleGenAI } from "@google/genai";
 
-let ai: any = null;
-if (process.env.GEMINI_API_KEY) {
-  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-}
-
-const PRIMARY_MODEL = "gemini-2.5-flash-lite";
-const FALLBACK_MODEL = "gemini-2.5-flash";
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const FALLBACK_MODEL = "gemini-2.5-flash-lite";
 
 function isOverloadedError(err: any): boolean {
   const msg = err?.message || "";
-  return err?.status === 503 || msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("overloaded");
+  const status = err?.status || err?.statusCode || 0;
+  return (
+    status === 503 ||
+    status === 429 ||
+    msg.includes("503") ||
+    msg.includes("429") ||
+    msg.includes("UNAVAILABLE") ||
+    msg.includes("overloaded") ||
+    msg.includes("high demand")
+  );
 }
 
-async function generateWithRetry(params: { contents: any; systemInstruction: string; schema: any }) {
-  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+function getClients(): any[] {
+  const keys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+  ].filter(Boolean) as string[];
+
+  if (keys.length === 0) return [];
+  return keys.map((key) => new GoogleGenAI({ apiKey: key }));
+}
+
+async function generateWithRetry(params: {
+  contents: any;
+  systemInstruction: string;
+  schema: any;
+}) {
+  const clients = getClients();
+  if (clients.length === 0) throw new Error("No API keys configured.");
+
+  // Shuffle clients so load is spread across keys randomly each request
+  const shuffled = [...clients].sort(() => Math.random() - 0.5);
+
+  // Build attempt list: try each key with primary model first,
+  // then each key with fallback model
+  const attempts: { client: any; model: string }[] = [
+    ...shuffled.map((c) => ({ client: c, model: PRIMARY_MODEL })),
+    ...shuffled.map((c) => ({ client: c, model: FALLBACK_MODEL })),
+  ];
+
   let lastError: any = null;
 
-  for (const model of modelsToTry) {
+  for (const { client, model } of attempts) {
     try {
-      const result = await ai.models.generateContent({
+      const result = await client.models.generateContent({
         model,
         contents: params.contents,
         config: {
@@ -32,10 +63,8 @@ async function generateWithRetry(params: { contents: any; systemInstruction: str
       return result;
     } catch (err: any) {
       lastError = err;
-      if (!isOverloadedError(err)) {
-        throw err; // not a capacity issue, no point trying the other model
-      }
-      // otherwise try the next model in the list
+      if (!isOverloadedError(err)) throw err;
+      // overloaded on this key/model combo — try next
     }
   }
 
@@ -49,15 +78,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    if (!ai) {
+    const clients = getClients();
+    if (clients.length === 0) {
       res.status(500).json({ error: "Gemini API key is not configured." });
       return;
     }
 
     const { content, docType, language, schema, mode, existingAnalysis } = req.body;
 
-    let contents;
-    let systemInstruction;
+    let contents: any;
+    let systemInstruction: string;
 
     if (mode === "translate" && existingAnalysis) {
       systemInstruction = `
@@ -81,17 +111,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           references, or jurisdiction-specific legal terminology. If you find a clear signal, name the country
           and explain the evidence. If there is no reliable signal, set detectedCountry to "Unspecified" and
           leave evidence/legalNote empty.
-        - If a jurisdiction is detected, tailor your risk analysis, "checkCarefully" items, and legal reasoning
-          to that specific country's relevant laws (e.g. labor law caps and entitlements, consumer protection
-          rules, contract enforceability standards, mandatory disclosure requirements). Mention in legalNote
-          briefly how the analysis was adjusted (e.g. "Adjusted for UAE Labour Law end-of-service gratuity rules").
-        - If no jurisdiction is detected, analyze using general/common legal principles and say so plainly —
-          do not guess a country without evidence.
+        - If a jurisdiction is detected, tailor your risk analysis to that country's relevant laws.
+          Mention in legalNote briefly how the analysis was adjusted.
         - Simplify complex documents into plain language.
         - Highlight risks (unfair terms, hidden conditions, penalties), with jurisdiction-specific context where relevant.
         - Provide structured output.
-        - Disclaimer: Include that this is an AI-generated explanation and not a substitute for professional legal advice,
-          and that local laws may have changed or have nuances a licensed local lawyer should confirm.
+        - Disclaimer: This is AI-generated and not a substitute for professional legal advice. Local laws may
+          have nuances a licensed local lawyer should confirm.
         - Be accurate and cautious.
         - Do NOT hallucinate.
       `;
@@ -111,12 +137,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const result = await generateWithRetry({ contents, systemInstruction, schema });
-
     res.status(200).json(JSON.parse(result.text));
   } catch (error: any) {
     console.error("Analysis error:", error);
     const friendlyMessage = isOverloadedError(error)
-      ? "The AI service is experiencing high demand right now. Please try again in a minute."
+      ? "The AI service is under very high load right now. Please wait 30 seconds and try again."
       : error.message || "Failed to analyze document.";
     res.status(500).json({ error: friendlyMessage });
   }
